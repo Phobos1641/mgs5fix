@@ -1,7 +1,5 @@
 # MGSVFix
-[![Patreon-Button](https://github.com/Lyall/MGSVFix/blob/main/.github/Patreon-Button.png?raw=true)](https://www.patreon.com/Wintermance) 
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/W7W01UAI9)<br />
-[![Github All Releases](https://img.shields.io/github/downloads/Lyall/MGSVFix/total.svg)](https://github.com/Lyall/MGSVFix/releases)
+[![Patreon-Button](.github/images/Patreon-Button.png)](https://www.patreon.com/Wintermance) [![ko-fi](.github/images/Kofi-Button.svg)](https://ko-fi.com/W7W01UAI9)
 
 **MGSVFix** is an ASI plugin for *Metal Gear Solid V: The Phantom Pain* (and *Ground Zeroes*!) that can:
 - Unlock resolution options/support.
@@ -9,10 +7,10 @@
 - Fix HUD issues at ultrawide resolutions.
 - Fix graphical effects at ultrawide resolutions.
 
-For more details on exactly what is fixed, click [here](https://github.com/Lyall/MGSVFix/blob/main/fixes.md).
+For more details on exactly what is fixed, click [here](./fixes.md).
 
 ## Installation  
-- Download the latest release from [here](https://github.com/Lyall/MGSVFix/releases). 
+- Download the latest [release](../../../releases). 
 - Extract the contents of the release zip in to the the game folder.  
 
 ### Steam Deck/Linux Additional Instructions
