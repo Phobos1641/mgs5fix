@@ -652,7 +652,6 @@ void Framerate()
                                 spdlog::info("GZ/TPP: Timer: Set timer resolution to 0.5ms");
                             }
                         }
-    
                     });
 
                 spdlog::info("GZ/TPP: Framerate: Target: Address is {:s}+{:x}", sExeName.c_str(), FramerateTargetScanResult - (std::uint8_t*)exeModule);
@@ -670,7 +669,7 @@ void Framerate()
                 static SafetyHookMid ThreadSleepMidHook{};
                 ThreadSleepMidHook = safetyhook::create_mid(ThreadSleepScanResult + 0xB,
                     [](SafetyHookContext& ctx) {
-                        // "MainThrd"
+                        // Sleep(0) for "MainThrd"
                         if (ctx.rbp == 0x01)
                             ctx.rdx = 0;
                     });
