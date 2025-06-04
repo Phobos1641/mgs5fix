@@ -25,7 +25,7 @@ For more details on exactly what is fixed, click [here](./fixes.md).
 - Certain lens effects like lens dirt are displayed at 16:9.
 
 ## Screenshots
-| ![ezgif-4404660a5886d0](https://github.com/user-attachments/assets/58f40f24-1306-49e7-b4cd-1b90feacd2f3) |
+| ![animated-comparison](.github/images/mgsv_comparison.png) |
 |:--:|
 | Gameplay |
 
