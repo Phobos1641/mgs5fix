@@ -59,7 +59,7 @@ struct GameInfo
     std::string ExeName;
 };
 
-enum class Game 
+enum class Game
 {
     Unknown,
     TPP,      // MGS V: The Phantom Pain
@@ -83,7 +83,7 @@ void CalculateAspectRatio(bool bLog)
     fAspectRatio = (float)iCurrentResX / (float)iCurrentResY;
     fAspectMultiplier = fAspectRatio / fNativeAspect;
 
-    // HUD 
+    // HUD
     fHUDWidth = (float)iCurrentResY * fNativeAspect;
     fHUDHeight = (float)iCurrentResY;
     fHUDWidthOffset = (float)(iCurrentResX - fHUDWidth) / 2.00f;
@@ -224,7 +224,7 @@ void CurrentResolution()
         // GZ/TPP: Current resolution
         std::uint8_t* CurrentResolutionScanResult = Memory::PatternScan(exeModule, "48 89 ?? ?? 48 8B ?? ?? 48 ?? ?? ?? ?? ?? ?? ?? ?? B8 01 00 00 00 48 ?? ?? ??");
         if (CurrentResolutionScanResult) {
-            spdlog::info("GZ/TPP: Current Resolution: Address is {:s}+{:x}", sExeName.c_str(), CurrentResolutionScanResult - (std::uint8_t*)exeModule);             
+            spdlog::info("GZ/TPP: Current Resolution: Address is {:s}+{:x}", sExeName.c_str(), CurrentResolutionScanResult - (std::uint8_t*)exeModule);
             static SafetyHookMid CurrentResolutionMidHook{};
             CurrentResolutionMidHook = safetyhook::create_mid(CurrentResolutionScanResult,
                 [](SafetyHookContext& ctx) {
@@ -243,12 +243,12 @@ void CurrentResolution()
         else {
             spdlog::error("GZ/TPP: Current Resolution: Pattern scan failed.");
         }
-    } 
+    }
 }
 
 void Resolution()
 {
-    if (bFixResolution) 
+    if (bFixResolution)
     {
         if (eGameType == Game::GZ || eGameType == Game::TPP) {
             // GZ/TPP: Unlock windowed/borderless resolutions
@@ -294,7 +294,7 @@ void Resolution()
         {
             // TPP: Unlock fullscreen resolutions
             std::uint8_t* FullscreenResolutionsScanResult = Memory::PatternScan(exeModule, "F3 0F ?? ?? F3 48 ?? ?? ?? B8 ?? ?? ?? ?? 89 ?? 39 ?? 0F ?? ?? 89 ?? ?? ?? 39 ??");
-            if (FullscreenResolutionsScanResult) { 
+            if (FullscreenResolutionsScanResult) {
                 spdlog::info("TPP: Unlock Resolutions: Fullscreen/Borderless: Address is {:s}+{:x}", sExeName.c_str(), FullscreenResolutionsScanResult - (std::uint8_t*)exeModule);
                 Memory::PatchBytes(FullscreenResolutionsScanResult + 0x3, "\xD3", 1); // mulss xmm2, xmm0 -> mulss xmm2, xmm3 to multiply by the actual aspect ratio
                 spdlog::info("TPP: Unlock Resolutions: Fullscreen/Borderless: Patched instruction.");
@@ -303,7 +303,7 @@ void Resolution()
                 spdlog::error("TPP: Unlock Resolutions: Pattern scan failed.");
             }
         }
-    } 
+    }
 }
 
 void IntroSkip()
@@ -311,7 +311,7 @@ void IntroSkip()
     if (eGameType == Game::TPP) {
         // TPP: Intro logos
         std::uint8_t* IntroLogosScanResult = Memory::PatternScan(exeModule, "C6 ?? ?? ?? ?? ?? 01 C7 ?? ?? ?? ?? ?? 00 00 00 00 E8 ?? ?? ?? ?? C7 ?? 00 00 00 00 48 89 ??");
-        if (IntroLogosScanResult) { 
+        if (IntroLogosScanResult) {
             spdlog::info("TPP: Intro Logos: Address is {:s}+{:x}", sExeName.c_str(), IntroLogosScanResult - (std::uint8_t*)exeModule);
             Memory::PatchBytes(IntroLogosScanResult + 0x6, "\x05", 1);
             spdlog::info("TPP: Intro Logos: Patched instruction.");
@@ -359,9 +359,9 @@ void AspectRatio()
                 spdlog::error("GZ/TPP: Lens Effects: Pattern scan failed.");
             }
 
-            // GZ/TPP: Fix depth of field 
-            std::uint8_t* DepthOfFieldScanResult = nullptr;   
-            if (eGameType == Game::GZ)                                      
+            // GZ/TPP: Fix depth of field
+            std::uint8_t* DepthOfFieldScanResult = nullptr;
+            if (eGameType == Game::GZ)
                 DepthOfFieldScanResult = Memory::PatternScan(exeModule, "F3 0F ?? ?? ?? ?? ?? ?? 0F ?? ?? 0F ?? ?? ?? ?? ?? ?? 44 0F ?? ?? F3 44 ?? ?? ??");
             else if (eGameType == Game::TPP)
                 DepthOfFieldScanResult = Memory::PatternScan(exeModule, "F3 0F ?? ?? ?? ?? ?? ?? 0F ?? ?? 0F ?? ?? 0F ?? ?? 0F ?? ?? ?? 0F ?? ?? ?? 0F ?? ?? ?? 44 0F ?? ??");
@@ -385,7 +385,7 @@ void AspectRatio()
 
 void HUD()
 {
-    if (bFixHUD) 
+    if (bFixHUD)
     {
         if (eGameType == Game::GZ || eGameType == Game::TPP) {
             // GZ/TPP: Span backgrounds
@@ -394,7 +394,7 @@ void HUD()
                 HUDBackgroundsScanResult = Memory::PatternScan(exeModule, "41 0F ?? ?? 8B ?? ?? F6 ?? ?? 0F 84 ?? ?? ?? ?? 44 ?? ?? 41 ?? ?? ?? 41 ?? ?? ?? 74 ??");
             else if (eGameType == Game::TPP)
                 HUDBackgroundsScanResult = Memory::PatternScan(exeModule, "F6 41 ?? 01 74 ?? 0F ?? ?? ?? 0F ?? ?? ?? 44 0F ?? ?? ?? 41 ?? ?? ??");
-                
+
             if (HUDBackgroundsScanResult) {
                 spdlog::info("GZ/TPP: HUD: Backgrounds: Address is {:s}+{:x}", sExeName.c_str(), HUDBackgroundsScanResult - (std::uint8_t*)exeModule);
                 static SafetyHookMid HUDBackgroundsMidHook{};
@@ -561,7 +561,7 @@ void HUD()
 
 void Movies()
 {
-    if (bFixHUD) 
+    if (bFixHUD)
     {
         if (eGameType == Game::TPP) {
             // TPP: Adjust movie frame
@@ -614,7 +614,7 @@ void Movies()
                 spdlog::error("TPP: HUD: Viewport: Pattern scan failed.");
             }
         }
-    }  
+    }
 }
 
 void Framerate()
@@ -625,7 +625,7 @@ void Framerate()
             // GZ/TPP: Force "variable" framerate setting
             std::uint8_t* FramerateSettingScanResult = Memory::PatternScan(exeModule, "48 33 ?? ?? ?? ?? ?? 49 85 ?? 48 0F ?? ?? ?? ?? ?? ?? 48 89 ?? ?? ?? ??");
             std::uint8_t* FramerateTargetScanResult = Memory::PatternScan(exeModule, "49 85 ?? 75 ?? F2 0F 10 0D ?? ?? ?? ??");
-            if (FramerateSettingScanResult && FramerateTargetScanResult) { 
+            if (FramerateSettingScanResult && FramerateTargetScanResult) {
                 spdlog::info("GZ/TPP: Framerate: Setting: Address is {:s}+{:x}", sExeName.c_str(), FramerateSettingScanResult - (std::uint8_t*)exeModule);
                 Memory::PatchBytes(FramerateSettingScanResult, "\x48\x31\xC0\x90\x90\x90\x90", 7); // xor rax, rax
                 spdlog::info("GZ/TPP: Framerate: Setting: Patched instruction.");
@@ -635,7 +635,7 @@ void Framerate()
                     [](SafetyHookContext& ctx) {
                         typedef NTSTATUS(NTAPI* _NtSetTimerResolution)(ULONG DesiredResolution, BOOLEAN SetResolution, PULONG CurrentResolution);
                         _NtSetTimerResolution NtSetTimerResolution;
-    
+
                         HMODULE ntdll = GetModuleHandleA("ntdll.dll");
                         if (ntdll) {
                             FARPROC NtSetTimerResolution_fn = GetProcAddress(ntdll, "NtSetTimerResolution");
@@ -643,11 +643,11 @@ void Framerate()
                                 NtSetTimerResolution = (_NtSetTimerResolution)NtSetTimerResolution_fn;
                             }
                         }
-    
+
                         if (NtSetTimerResolution) {
                             ULONG currentRes;
                             NTSTATUS status = NtSetTimerResolution(5000, TRUE, &currentRes);
-                            
+
                             if (status == 0) {
                                 spdlog::info("GZ/TPP: Timer: Set timer resolution to 0.5ms");
                             }
@@ -664,7 +664,7 @@ void Framerate()
 
             // GZ/TPP: Thread sleep
             std::uint8_t* ThreadSleepScanResult = Memory::PatternScan(exeModule, "48 ?? ?? 48 85 ?? 75 ?? 8D ?? 01 48 8D ?? ?? ??");
-            if (ThreadSleepScanResult) { 
+            if (ThreadSleepScanResult) {
                 spdlog::info("GZ/TPP: Thread Sleep: Address is {:s}+{:x}", sExeName.c_str(), ThreadSleepScanResult - (std::uint8_t*)exeModule);
                 static SafetyHookMid ThreadSleepMidHook{};
                 ThreadSleepMidHook = safetyhook::create_mid(ThreadSleepScanResult + 0xB,
@@ -682,7 +682,7 @@ void Framerate()
         if (eGameType == Game::GZ) {
             // GZ: Fix freezing bug with throwables when using variable framerate
             std::uint8_t* ThrowableBugScanResult = Memory::PatternScan(exeModule, "F2 0F 59 ?? ?? ?? ?? ?? 66 0F ?? ?? F7 ?? ?? ?? ?? ?? 00 01 00 00 74 ??");
-            if (ThrowableBugScanResult) { 
+            if (ThrowableBugScanResult) {
                 spdlog::info("GZ: Framerate: Throwable Framerate Bug: Address is {:s}+{:x}", sExeName.c_str(), ThrowableBugScanResult - (std::uint8_t*)exeModule);
                 Memory::PatchBytes(ThrowableBugScanResult, "\xF2\x0F\x59\x40\x30\x90\x90\x90", 8); // mulsd xmm0,[7FF677CA9C00] (fixed 60fps frametime) -> mulsd xmm0, [rax+30] (current frametime)
                 spdlog::info("GZ: Framerate: Throwable Framerate Bug: Patched instruction.");
@@ -701,7 +701,7 @@ void Graphics()
         if (eGameType == Game::TPP) {
             // TPP: LOD factor resolution
             std::uint8_t* LODFactorResolutionScanResult = Memory::PatternScan(exeModule, "8B ?? ?? ?? ?? ?? 4C 8B ?? ?? ?? ?? ?? 85 ?? 75 ?? 8B ?? ?? ?? ?? ?? F3 0F ?? ?? ?? ?? ?? ?? F3 0F ?? ?? ?? ?? ?? ??");
-            if (LODFactorResolutionScanResult) { 
+            if (LODFactorResolutionScanResult) {
                 spdlog::info("TPP: Graphics: LOD: LOD Factor Resolution: Address is {:s}+{:x}", sExeName.c_str(), LODFactorResolutionScanResult - (std::uint8_t*)exeModule);
                 std::uint8_t* LODFactorResolution = Memory::GetAbsolute(LODFactorResolutionScanResult + 0x2);
                 Memory::Write(LODFactorResolution, iTerrainDistance);
@@ -713,7 +713,7 @@ void Graphics()
         else if (eGameType == Game::GZ) {
             // GZ: LOD factor resolution
             std::uint8_t* LODFactorResolutionScanResult = Memory::PatternScan(exeModule, "66 0F ?? ?? ?? ?? ?? ?? 0F 29 ?? ?? 0F 28 ?? F3 0F ?? ?? ?? ?? ?? ?? 0F 5B ??");
-            if (LODFactorResolutionScanResult) { 
+            if (LODFactorResolutionScanResult) {
                 spdlog::info("GZ: Graphics: LOD: LOD Factor Resolution: Address is {:s}+{:x}", sExeName.c_str(), LODFactorResolutionScanResult - (std::uint8_t*)exeModule);
                 static SafetyHookMid LODFactorResolutionMidHook{};
                 LODFactorResolutionMidHook = safetyhook::create_mid(LODFactorResolutionScanResult + 0x8,
@@ -729,7 +729,7 @@ void Graphics()
         if (eGameType == Game::GZ || eGameType == Game::TPP) {
             // GZ/TPP: Model quality
             std::uint8_t* ModelQualityScanResult = Memory::PatternScan(exeModule, "89 ?? 64 B0 01 C3 8B ?? ?? C6 ?? ?? 00 89 ?? ?? B0 01 C3");
-            if (ModelQualityScanResult) { 
+            if (ModelQualityScanResult) {
                 spdlog::info("GZ/TPP: Graphics: LOD: Model/Grass LOD Distance: Address is {:s}+{:x}", sExeName.c_str(), ModelQualityScanResult - (std::uint8_t*)exeModule);
                 static SafetyHookMid ModelQualityMidHook{};
                 ModelQualityMidHook = safetyhook::create_mid(ModelQualityScanResult,
@@ -744,7 +744,7 @@ void Graphics()
                 spdlog::error("GZ/TPP: Graphics: LOD: Model/Grass LOD Distance: Pattern scan failed.");
             }
         }
-    }   
+    }
 }
 
 DWORD __stdcall Main(void*)
@@ -773,7 +773,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
     {
         thisModule = hModule;
 
-        HANDLE mainHandle = CreateThread(NULL, 0, Main, 0, NULL, 0);
+        HANDLE mainHandle = CreateThread(NULL, 0, Main, 0, 0, NULL);
         if (mainHandle)
         {
             SetThreadPriority(mainHandle, THREAD_PRIORITY_HIGHEST);
