@@ -37,15 +37,28 @@ float fHUDWidthOffset;
 float fHUDHeight;
 float fHUDHeightOffset;
 
+// FOV is in focal length of a 24mm x 36mm camera lens and is locked horizontally
+const auto fFOVDefaultTPP      = 21.F;
+const auto fFOVDefaultShoulder = 22.F;
+const auto fFOVDefaultHiding   = 26.F;
+const auto fFOVDefaultCQC      = 32.F;
+float fFOVNewTPP;
+float fFOVNewShoulder;
+float fFOVNewHiding;
+float fFOVNewCQC;
+
 // Ini variables
 bool bUnlockFPS;
 bool bFixResolution;
+bool bSkipIntro;
 bool bFixAspect;
 bool bFixHUD;
 bool bLODTweaks;
+bool bChangeFOV;
 int iTerrainDistance;
 float fModelDistance;
 float fGrassDistance;
+float fFOV;
 
 // Variables
 int iCurrentResX;
@@ -64,6 +77,7 @@ enum class Game
     Unknown,
     TPP,      // MGS V: The Phantom Pain
     GZ,       // MGS V: Ground Zeroes
+    ONLINE,   // MGS V: Online
 };
 
 const std::map<Game, GameInfo> kGames = {
@@ -181,22 +195,28 @@ void Configuration()
     // Load settings from ini
     inipp::get_value(ini.sections["Unlock Framerate"], "Enabled", bUnlockFPS);
     inipp::get_value(ini.sections["Fix Resolution"], "Enabled", bFixResolution);
+    inipp::get_value(ini.sections["Fix Resolution"], "Enabled", bFixResolution);
+    inipp::get_value(ini.sections["Skip Intro"], "Enabled", bSkipIntro);
     inipp::get_value(ini.sections["Fix Aspect"], "Enabled", bFixAspect);
     inipp::get_value(ini.sections["Fix HUD"], "Enabled", bFixHUD);
     inipp::get_value(ini.sections["LOD Tweaks"], "Enabled", bLODTweaks);
     inipp::get_value(ini.sections["LOD Tweaks"], "TerrainDistance", iTerrainDistance);
     inipp::get_value(ini.sections["LOD Tweaks"], "ModelDistance", fModelDistance);
     inipp::get_value(ini.sections["LOD Tweaks"], "GrassDistance", fGrassDistance);
+    inipp::get_value(ini.sections["Change FOV"], "Enabled", bChangeFOV);
+    inipp::get_value(ini.sections["Change FOV"], "FOV", fFOV);
 
     // Log ini parse
     spdlog_confparse(bUnlockFPS);
     spdlog_confparse(bFixResolution);
+    spdlog_confparse(bSkipIntro);
     spdlog_confparse(bFixAspect);
     spdlog_confparse(bFixHUD);
     spdlog_confparse(bLODTweaks);
     spdlog_confparse(iTerrainDistance);
     spdlog_confparse(fModelDistance);
     spdlog_confparse(fGrassDistance);
+    spdlog_confparse(fFOV);
 
     spdlog::info("----------");
 }
@@ -308,6 +328,9 @@ void Resolution()
 
 void IntroSkip()
 {
+    if (!bSkipIntro)
+        return;
+
     if (eGameType == Game::TPP) {
         // TPP: Intro logos
         std::uint8_t* IntroLogosScanResult = Memory::PatternScan(exeModule, "C6 ?? ?? ?? ?? ?? 01 C7 ?? ?? ?? ?? ?? 00 00 00 00 E8 ?? ?? ?? ?? C7 ?? 00 00 00 00 48 89 ??");
@@ -747,6 +770,53 @@ void Graphics()
     }
 }
 
+void FOV()
+{
+    if (!bChangeFOV)
+        return;
+
+    if (eGameType != Game::GZ && eGameType != Game::TPP && eGameType != Game::ONLINE)
+        return;
+
+    const auto deg2rad     = 3.1415926F / 180.F;
+    const auto frame_width = 36.F;
+    const auto tpp_fov_tan = tan(fFOV * deg2rad / 2.F);
+    fFOVNewTPP      = frame_width / tpp_fov_tan / 2.F;
+    fFOVNewShoulder = frame_width / (tpp_fov_tan * (fFOVDefaultTPP / fFOVDefaultShoulder)) / 2.F;
+    fFOVNewHiding   = frame_width / (tpp_fov_tan * (fFOVDefaultTPP / fFOVDefaultHiding)) / 2.F;
+    fFOVNewCQC      = frame_width / (tpp_fov_tan * (fFOVDefaultTPP / fFOVDefaultCQC)) / 2.F;
+
+    std::uint8_t* UpdateFOVLerpCallSiteScanResult = Memory::PatternScan(exeModule, "48 8B 8F ?? ?? ?? ?? 48 8B 01 FF 50 18 48 8D 4F E0 E8");
+    if (!UpdateFOVLerpCallSiteScanResult) {
+        spdlog::error("GZ/TPP: Graphics: FOV: Pattern scan failed.");
+        return;
+    }
+
+    spdlog::info("GZ/TPP: Graphics: FOV: update_fov_lerp: Call site is {:s}+{:x}", sExeName.c_str(), UpdateFOVLerpCallSiteScanResult - (std::uint8_t*)exeModule);
+
+    // Resolve the rel32 displacement at UpdateFOVLerpCallSiteScanResult+18 to find update_fov_lerp itself
+    auto* rel32_ptr = reinterpret_cast<std::int32_t*>(UpdateFOVLerpCallSiteScanResult + 18);
+    std::uint8_t* UpdateFovLerpAddress = reinterpret_cast<std::uint8_t*>(rel32_ptr) + 4 + *rel32_ptr;
+
+    spdlog::info("GZ/TPP: Graphics: FOV: update_fov_lerp: Address is {:s}+{:x}", sExeName.c_str(), UpdateFovLerpAddress - (std::uint8_t*)exeModule);
+
+    static const std::uintptr_t fov_offset = (eGameType == Game::ONLINE) ? 0x2EC : 0x2FC;
+
+    static SafetyHookMid FOVMidHook{};
+    FOVMidHook = safetyhook::create_mid(UpdateFovLerpAddress, [](SafetyHookContext& ctx) {
+        auto* target_fov = reinterpret_cast<float*>(ctx.rcx + fov_offset);
+
+        if (*target_fov == fFOVDefaultTPP)
+            *target_fov = fFOVNewTPP;
+        else if (*target_fov == fFOVDefaultShoulder)
+            *target_fov = fFOVNewShoulder;
+        else if (*target_fov == fFOVDefaultHiding)
+            *target_fov = fFOVNewHiding;
+        else if (*target_fov == fFOVDefaultCQC)
+            *target_fov = fFOVNewCQC;
+    });
+}
+
 DWORD __stdcall Main(void*)
 {
     Logging();
@@ -755,17 +825,18 @@ DWORD __stdcall Main(void*)
     {
         CurrentResolution();
         Resolution();
-        //IntroSkip();
+        IntroSkip();
         AspectRatio();
         HUD();
         Movies();
         Framerate();
         Graphics();
+        FOV();
     }
     return true;
 }
 
-BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
+BOOL APIENTRY __declspec(dllexport) DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
 {
     switch (ul_reason_for_call)
     {
