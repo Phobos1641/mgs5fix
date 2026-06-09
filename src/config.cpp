@@ -1,0 +1,60 @@
+#include "stdafx.h"
+#include "version.h"
+#include "globals.h"
+#include "config.h"
+
+namespace Config
+{
+    void Init()
+    {
+        std::string configPath = (FixPath / (FixName + ".ini")).string();
+        mINI::INIFile file(configPath);
+
+        if (!file.read(ini)) {
+            LOG_ERROR("{}: Could not locate config file. Make sure {}.ini is located in {}", FixName, FixName, FixPath.string());
+            AllocConsole();
+            freopen_s(reinterpret_cast<FILE**>(stdout), "CONOUT$", "w", stdout);
+            freopen_s(reinterpret_cast<FILE**>(stderr), "CONOUT$", "w", stderr);
+            std::cerr << "Fatal Error: " << FixName + ": Could not locate config file.\nMake sure " + FixName + ".ini is located in " + FixPath.string() << std::endl;
+            FreeLibraryAndExitThread(ThisModule, 1);
+        }
+
+        LOG_INFO("Config File: {}", configPath);
+
+        UnlockFPS       = ParseConfig("Unlock Framerate", "Enabled", false);
+        FixResolution   = ParseConfig("Fix Resolution", "Enabled", false);
+        FixAspect       = ParseConfig("Fix Aspect", "Enabled", false);
+        FixHUD          = ParseConfig("Fix HUD", "Enabled", false);
+
+        LODTweaks       = ParseConfig("LOD Tweaks", "Enabled", false);
+        if (LODTweaks) {
+            TerrainDistance = ParseConfig("LOD Tweaks", "TerrainDistance", 8192);
+            ModelDistance   = ParseConfig("LOD Tweaks", "ModelDistance", 512);
+            GrassDistance   = ParseConfig("LOD Tweaks", "GrassDistance", 1000);
+        }
+
+        LOG_INFO("----------");
+    }
+
+    int ParseConfig(const std::string& section, const std::string& key, int defaultValue, int min, int max)
+    {
+        int value = ParseConfig(section, key, defaultValue);
+        if (value < min || value > max) {
+            int clamped = std::clamp(value, min, max);
+            LOG_WARN("Config Parse: [{}]: {}: {} is out of range. Clamped to: {}", section, key, value, clamped);
+            return clamped;
+        }
+        return value;
+    }
+
+    float ParseConfig(const std::string& section, const std::string& key, float defaultValue, float min, float max)
+    {
+        float value = ParseConfig(section, key, defaultValue);
+        if (value < min || value > max) {
+            float clamped = std::clamp(value, min, max);
+            LOG_WARN("Config Parse: [{}]: {}: {} is out of range. Clamped to: {}", section, key, value, clamped);
+            return clamped;
+        }
+        return value;
+    }
+}
