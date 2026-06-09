@@ -1,0 +1,102 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release tag/version (e.g. v1.0.0)'
+        required: true
+      prerelease:
+        description: 'Mark as pre-release'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+env:
+  ASI_LOADER_VERSION: v9.7.2
+  ASI_LOADER_ASSET: Ultimate-ASI-Loader_x64.zip
+  ASI_LOADER_B2SUM: 0a2b0cb407175137d65e1d47e2e6f4c9797cfb2bc5fe990a028e1b6afa225c2343bc85941d757ae7252d4691fea3c01bb5b2c7ee2fc2b9225252277ea4874d36
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout (with submodules)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            meson ninja-build g++-mingw-w64-x86-64 zip unzip
+
+      - name: Resolve version
+        id: ver
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Configure
+        run: meson setup build --cross-file .ci/ubuntu-mingw-w64-x86_64.txt
+
+      - name: Build
+        run: meson compile -C build
+
+      - name: Fetch & verify Ultimate ASI Loader
+        run: |
+          url="https://github.com/ThirteenAG/Ultimate-ASI-Loader/releases/download/${ASI_LOADER_VERSION}/${ASI_LOADER_ASSET}"
+          echo "Downloading ${url}"
+          curl -fL --retry 3 -o loader.zip "${url}"
+          echo "Verifying BLAKE2b-512 checksum..."
+          echo "${ASI_LOADER_B2SUM}  loader.zip" | b2sum -c --strict -
+          unzip -o loader.zip -d loader
+
+      - name: Stage release files
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+          PROXY: winmm.dll
+        run: |
+          mkdir -p staging
+          cp -t staging/ \
+            build/MGSVFix.asi \
+            MGSVFix.ini
+
+          DINPUT="$(find loader -name dinput8.dll | head -n1)"
+          if [ -z "${DINPUT}" ]; then
+            echo "::error::dinput8.dll not found in ${ASI_LOADER_ASSET}"
+            exit 1
+          fi
+          mv "${DINPUT}" "staging/${PROXY}"
+
+          : > "staging/EXTRACT_TO_GAME_FOLDER"
+
+          ZIP="MGSVFix_${VERSION}.zip"
+          ( cd staging && zip -r "../${ZIP}" . )
+          echo "ZIP=${ZIP}" >> "$GITHUB_ENV"
+
+      - name: Prepare release notes
+        run: |
+          if [ -f release_body.md ]; then
+            sed "s/<RELEASE_ZIP_NAME>/${ZIP}/g" release_body.md > release_notes.md
+          else
+            echo "MGSVFix ${{ steps.ver.outputs.version }}" > release_notes.md
+          fi
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name:   ${{ steps.ver.outputs.version }}
+          name:       ${{ steps.ver.outputs.version }}
+          body_path:  release_notes.md
+          prerelease: ${{ github.event.inputs.prerelease == 'true' }}
+          files:      ${{ env.ZIP }}
