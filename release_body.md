@@ -1,7 +1,7 @@
 ## Installation  
 - Download the file marked `<RELEASE_ZIP_NAME>` from the "Downloads" section below.
-- Extract the contents of the release zip in to the the game folder.
+- Extract the contents of the release zip into the game folder.
   
 ### Steam Deck/Linux Additional Instructions
-**You do not need to do this if you are using Windows!**
+**Windows users can skip this step!**
 - Open up the game properties in Steam and add `WINEDLLOVERRIDES="winmm=n,b" %command%` to the launch options.  
