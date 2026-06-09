@@ -293,10 +293,10 @@ void Resolution()
         else if (eGameType == Game::TPP)
         {
             // TPP: Unlock fullscreen resolutions
-            std::uint8_t* FullscreenResolutionsScanResult = Memory::PatternScan(exeModule, "F3 0F ?? ?? F3 48 ?? ?? ?? B8 ?? ?? ?? ?? 89 ?? 39 ?? 0F ?? ?? 89 ?? ?? ?? 39 ??");
+            std::uint8_t* FullscreenResolutionsScanResult = Memory::PatternScan(exeModule, "EB ?? F3 0F ?? ?? F3 48 ?? ?? ?? B8 ?? ?? ?? ??");
             if (FullscreenResolutionsScanResult) { 
                 spdlog::info("TPP: Unlock Resolutions: Fullscreen/Borderless: Address is {:s}+{:x}", sExeName.c_str(), FullscreenResolutionsScanResult - (std::uint8_t*)exeModule);
-                Memory::PatchBytes(FullscreenResolutionsScanResult + 0x3, "\xD3", 1); // mulss xmm2, xmm0 -> mulss xmm2, xmm3 to multiply by the actual aspect ratio
+                Memory::PatchBytes(FullscreenResolutionsScanResult + 0x5, "\xD3", 1); // mulss xmm2, xmm0 -> mulss xmm2, xmm3 to multiply by the actual aspect ratio
                 spdlog::info("TPP: Unlock Resolutions: Fullscreen/Borderless: Patched instruction.");
             }
             else {
