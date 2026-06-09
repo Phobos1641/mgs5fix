@@ -1,5 +1,8 @@
 #pragma once
 
+#include <string>
+#include <filesystem>
+
 struct GameInfo {
     std::string Exe;
     std::string Name;

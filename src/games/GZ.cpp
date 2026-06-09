@@ -11,8 +11,81 @@
 
 namespace GZ
 {
+    static void Resolution() 
+    {
+        if (Config::FixResolution) {
+            // Unlock fullscreen/borderless resolutions
+            if (auto* FullscreenResolutions = Memory::FindPattern(std::format("{}: Unlock Resolutions: Fullscreen/Borderless", CurrentGame->ShortName).c_str(), "F3 0F ?? ?? F3 48 ?? ?? ?? 8B ?? 41 ?? ?? ?? ?? ?? ?? 0F ?? ?? 44 ?? ?? 41 ?? ?? ?? 41 ?? ?? 33 ??"))
+                Memory::PatchBytes(FullscreenResolutions + 0x3, "\xD1"); // divss xmm2, xmm0 -> divss xmm2, xmm1 to divide by the actual aspect ratio
+
+            // Remove HWND_TOPMOST flag for borderless mode
+            MAKE_MIDHOOK(BorderlessTopMost_sh, std::format("{}: Borderless TopMost", CurrentGame->ShortName).c_str(), "48 89 ?? ?? 48 8B ?? ?? 48 ?? ?? ?? ?? ?? ?? ?? ?? B8 01 00 00 00 48 ?? ?? ??", 0, [](SafetyHookContext& ctx) {
+                if (ctx.rdx == reinterpret_cast<uintptr_t>(HWND_TOPMOST))
+                    ctx.rdx = reinterpret_cast<uintptr_t>(HWND_NOTOPMOST);
+            });
+        }
+    }
+
+    static void AspectRatio()
+    {
+        if (Config::FixAspect) {
+            MAKE_MIDHOOK(DepthOfField_sh, std::format("{}: Depth of Field", CurrentGame->ShortName).c_str(), "F3 0F ?? ?? ?? ?? ?? ?? 0F ?? ?? 0F ?? ?? ?? ?? ?? ?? 44 0F ?? ?? F3 44 ?? ?? ??", 0, [](SafetyHookContext& ctx) {
+                if (Screen::AspectRatio > Screen::NativeAspect) {
+                    ctx.xmm6.f32[0] = (Screen::HUDWidth * 0.85f) * (1.0f / 1920.0f);
+                    ctx.xmm4.f32[0] = Screen::HUDWidth;
+                }
+            });
+        }
+    }
+
+    static void HUD()
+    {
+        if (Config::FixHUD) {
+            // Span backgrounds
+            MAKE_MIDHOOK(HUDBackgrounds_sh, std::format("{}: HUD: Backgrounds", CurrentGame->ShortName).c_str(), "41 0F ?? ?? 8B ?? ?? F6 ?? ?? 0F 84 ?? ?? ?? ?? 44 ?? ?? 41 ?? ?? ?? 41 ?? ?? ?? 74 ??", 0, [](SafetyHookContext& ctx) {
+                const float width = *reinterpret_cast<const float*>(ctx.rcx + 0x30);
+                const float height = *reinterpret_cast<const float*>(ctx.rcx + 0x34);
+
+                if (Screen::AspectRatio > Screen::NativeAspect) {
+                    // TPP/GZ: ui_sys_cmn_bg
+                    if (width == 2048.0f && height == 1152.0f)
+                        ctx.xmm0.f32[0] *= Screen::AspectMultiplier;
+
+                    // TPP/GZ: Cutscene skip BG
+                    if (width == 2000.0f && height == 1125.0f)
+                        ctx.xmm0.f32[0] *= Screen::AspectMultiplier;
+
+                    // TPP/GZ: Mission failed BGs
+                    if (width == 1500.0f && height == 1500.0f)
+                        ctx.xmm0.f32[0] *= Screen::AspectMultiplier;
+                    if (width == 2000.0f && height == 2000.0f)
+                        ctx.xmm0.f32[0] *= Screen::AspectMultiplier;
+                    if ((width > 1882.0f && width < 1884.0f) && (height > 1059.0f && height < 1061.0f))
+                        ctx.xmm0.f32[0] *= Screen::AspectMultiplier;
+                    if ((width > 1770.0f && width < 1772.0f) && (height > 995.0f && height < 997.0f))
+                        ctx.xmm0.f32[0] *= Screen::AspectMultiplier;
+
+                    // TPP/GZ: Scope fade
+                    if (width == 1400.0f && height == 1280.0f)
+                        ctx.xmm0.f32[0] *= Screen::AspectMultiplier;
+
+                    // GZ: Scope frame
+                    if (width == 600.0f && (height > 1230.0f && height < 1231.0f))
+                        ctx.xmm0.f32[0] *= Screen::AspectMultiplier;
+                }
+            });
+        }
+    }
+
     void Init()
     {
         Common::CurrentResolution();
+        Common::Resolution();
+        Resolution();
+
+        Common::AspectRatio();
+        AspectRatio();
+        
+        HUD();
     }
 }

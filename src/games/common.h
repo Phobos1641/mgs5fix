@@ -1,8 +1,8 @@
 #pragma once
 
-#include <string>
-
 namespace Common
 {
     void CurrentResolution();
+    void Resolution();
+    void AspectRatio();
 }
