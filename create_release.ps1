@@ -23,10 +23,10 @@ xmake build -v
 Write-Host "($Arch) Downloading Ultimate ASI Loader..."
 
 if ($Arch -eq "x86") {
-    $asiUrl = "https://github.com/ThirteenAG/Ultimate-ASI-Loader/releases/latest/download/Ultimate-ASI-Loader.zip"
+    $asiUrl = "https://github.com/ThirteenAG/Ultimate-ASI-Loader/releases/download/v9.7.0/Ultimate-ASI-Loader.zip"
     $asiZipFile = "Ultimate-ASI-Loader_x86.zip"
 } else {
-    $asiUrl = "https://github.com/ThirteenAG/Ultimate-ASI-Loader/releases/latest/download/Ultimate-ASI-Loader_x64.zip"
+    $asiUrl = "https://github.com/ThirteenAG/Ultimate-ASI-Loader/releases/download/v9.7.0/Ultimate-ASI-Loader_x64.zip"
     $asiZipFile = "Ultimate-ASI-Loader_x64.zip"
 }
 
