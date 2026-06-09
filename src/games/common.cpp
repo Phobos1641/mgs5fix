@@ -47,4 +47,53 @@ namespace Common
             });
         }
     }
+
+    void HUD()
+    {
+        // Nothing shared yet
+    }
+
+    void Framerate()
+    {
+        if (Config::UnlockFPS) {
+            // Force "variable" framerate setting
+            if (auto* FramerateSetting = Memory::FindPattern(std::format("{}: Framerate: Setting", CurrentGame->ShortName).c_str(), "48 33 ?? ?? ?? ?? ?? 49 85 ?? 48 0F ?? ?? ?? ?? ?? ?? 48 89 ?? ?? ?? ??"))
+                Memory::PatchBytes(FramerateSetting, "\x48\x31\xC0\x90\x90\x90\x90"); // xor rax, rax
+            
+            // Force "variable" framerate target
+            if (auto* FramerateTarget = Memory::FindPattern(std::format("{}: Framerate: Target", CurrentGame->ShortName).c_str(), "49 85 ?? 75 ?? F2 0F 10 0D ?? ?? ?? ??"))
+                Memory::PatchBytes(FramerateTarget + 0x3, "\xEB");
+
+            // Reduce sleep duration for main thread
+            MAKE_MIDHOOK(MainThreadSleep_sh, std::format("{}: Main Thread Sleep", CurrentGame->ShortName).c_str(), "48 ?? ?? 48 85 ?? 75 ?? 8D ?? 01 48 8D ?? ?? ??", 0xB, [](SafetyHookContext& ctx) {
+                if (ctx.rbp == 1) ctx.rdx = 0; // Sleep(0)
+            });
+
+            // Set timer resolution
+            if (HMODULE ntdll = GetModuleHandleA("ntdll.dll")) {
+                using _NtSetTimerResolution = NTSTATUS(NTAPI*)(ULONG, BOOLEAN, PULONG);
+                if (auto NtSetTimerResolution = reinterpret_cast<_NtSetTimerResolution>(GetProcAddress(ntdll, "NtSetTimerResolution"))) {
+                    ULONG currentRes;
+                    if (NtSetTimerResolution(5000, TRUE, &currentRes) == 0)
+                        LOG_INFO("{}: Framerate: Timer resolution set to 0.5ms", CurrentGame->ShortName);
+                }
+            }
+        }
+    }
+
+    void Graphics()
+    {
+        if (Config::LODTweaks) {
+            // Adjust model/grass draw distance
+            MAKE_MIDHOOK(ModelQuality_sh, std::format("{}: LOD: Model/Grass Distance", CurrentGame->ShortName).c_str(), "89 ?? 64 B0 01 C3 8B ?? ?? C6 ?? ?? 00 89 ?? ?? B0 01 C3", 0, [](SafetyHookContext& ctx) {
+                const float grassDist = static_cast<float>(Config::GrassDistance);
+                const float modelDist = static_cast<float>(Config::ModelDistance);
+
+                if (ctx.rbx == 9)
+                    ctx.rax = *reinterpret_cast<const uint32_t*>(&grassDist);
+                else
+                    ctx.rax = *reinterpret_cast<const uint32_t*>(&modelDist);
+            });
+        }
+    }
 }

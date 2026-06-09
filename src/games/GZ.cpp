@@ -78,15 +78,42 @@ namespace GZ
         }
     }
 
+    static void Framerate()
+    {
+        if (Config::UnlockFPS) {
+            // Fix freezing bug with throwables when using variable framerate
+            if (auto* ThrowableFreezeBug = Memory::FindPattern(std::format("{}: Framerate: Throwable Freeze Bug", CurrentGame->ShortName).c_str(), "F2 0F 59 ?? ?? ?? ?? ?? 66 0F ?? ?? F7 ?? ?? ?? ?? ?? 00 01 00 00 74 ??"))
+                Memory::PatchBytes(ThrowableFreezeBug, "\xF2\x0F\x59\x40\x30\x90\x90\x90"); // mulsd xmm0,[7FF677CA9C00] (fixed 60fps frametime) -> mulsd xmm0, [rax+30] (current frametime)
+        }
+    }
+
+    static void Graphics()
+    {
+        if (Config::LODTweaks) {
+            // Adjust LOD factor resolution
+            MAKE_MIDHOOK(LODFactorResolution_sh, std::format("{}: LOD: LOD Factor Resolution", CurrentGame->ShortName).c_str(), "66 0F ?? ?? ?? ?? ?? ?? 0F 29 ?? ?? 0F 28 ?? F3 0F ?? ?? ?? ?? ?? ?? 0F 5B ??", 0x8, [](SafetyHookContext& ctx) {
+                ctx.xmm3.u16[0] = Config::TerrainDistance;
+            });
+        }
+    }
+
     void Init()
     {
         Common::CurrentResolution();
+        
         Common::Resolution();
         Resolution();
 
         Common::AspectRatio();
         AspectRatio();
 
+        Common::HUD();
         HUD();
+
+        Common::Framerate();
+        Framerate();
+
+        Common::Graphics();
+        Graphics();
     }
 }

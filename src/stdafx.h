@@ -2,7 +2,11 @@
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
+
 #include <windows.h>
+#include <intrin.h>
+#include <winternl.h>
+
 #include <string>
 #include <fstream>
 #include <filesystem>
@@ -10,7 +14,6 @@
 #include <numbers>
 #include <iostream>
 #include <algorithm>
-#include <intrin.h>
 #include <format>
 
 #include <safetyhook.hpp>

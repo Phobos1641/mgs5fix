@@ -137,16 +137,37 @@ namespace TPP
         }
     }
 
+    static void Framerate()
+    {
+        // Nothing TPP-specific yet
+    }
+
+    static void Graphics()
+    {
+        if (Config::LODTweaks) {
+            // Adjust LOD factor resolution
+            if (auto* LODFactorResolution = Memory::FindPattern(std::format("{}: LOD: LOD Factor Resolution", CurrentGame->ShortName).c_str(), "8B ?? ?? ?? ?? ?? 4C 8B ?? ?? ?? ?? ?? 85 ?? 75 ?? 8B ?? ?? ?? ?? ?? F3 0F ?? ?? ?? ?? ?? ?? F3 0F ?? ?? ?? ?? ?? ??"))
+                Memory::Write(Memory::GetRelativeAddr(LODFactorResolution + 0x2), Config::TerrainDistance);
+        }
+    }
 
     void Init()
     {
         Common::CurrentResolution();
+
         Common::Resolution();
         Resolution();
 
         Common::AspectRatio();
         AspectRatio();
         
+        Common::HUD();
         HUD();
+
+        Common::Framerate();
+        Framerate();
+
+        Common::Graphics();
+        Graphics();
     }
 }
