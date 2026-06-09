@@ -23,6 +23,7 @@ namespace TPP
     static void AspectRatio()
     {
         if (Config::FixAspect) {
+            // Fix depth of field strength
             MAKE_MIDHOOK(DepthOfField_sh, std::format("{}: Depth of Field", CurrentGame->ShortName).c_str(), "F3 0F ?? ?? ?? ?? ?? ?? 0F ?? ?? 0F ?? ?? 0F ?? ?? 0F ?? ?? ?? 0F ?? ?? ?? 0F ?? ?? ?? 44 0F ?? ??", 0, [](SafetyHookContext& ctx) {
                 if (Screen::AspectRatio > Screen::NativeAspect) {
                     ctx.xmm6.f32[0] = (Screen::HUDWidth * 0.85f) * (1.0f / 1920.0f);
@@ -96,6 +97,42 @@ namespace TPP
                     *reinterpret_cast<float*>(ctx.rdx + 0x120) = 64.0f;
                     ctx.xmm1.f32[0] = 64.0f;
                 }
+            });
+
+            // Increase bounds at which markers are constrained horizontally
+            MAKE_MIDHOOK(MarkerBoundsHor_sh, std::format("{}: HUD: Marker Bounds (Horizontal)", CurrentGame->ShortName).c_str(), "F3 0F ?? ?? ?? ?? ?? ?? 0F ?? ?? 77 ?? F3 0F ?? ?? ?? ?? ?? ?? 0F ?? ?? 73 ?? 0F ?? ?? E8 ?? ?? ?? ??", 0, [](SafetyHookContext& ctx) {
+                if (Screen::AspectRatio > Screen::NativeAspect) {
+                    const float bounds = 51.5f * Screen::AspectMultiplier;
+                    ctx.xmm7.f32[0] = std::clamp(ctx.xmm7.f32[0], -bounds, bounds);
+                    ctx.rip = MarkerBoundsHor_sh.target_address() + 0x1D;
+                }
+            });
+
+            // Fix various overlays
+            auto overlayHook = [](SafetyHookContext& ctx) {
+                if (Screen::AspectRatio > Screen::NativeAspect)
+                    ctx.xmm5.f32[0] *= Screen::AspectMultiplier;
+            };
+
+            MAKE_MIDHOOK(Overlays1_sh, std::format("{}: HUD: Overlays: 1", CurrentGame->ShortName).c_str(), "F3 0F ?? ?? ?? ?? ?? ?? C7 44 ?? ?? 00 00 80 BF C7 44 ?? ?? 00 00 80 3F", 0, overlayHook);
+            MAKE_MIDHOOK(Overlays2_sh, std::format("{}: HUD: Overlays: 2", CurrentGame->ShortName).c_str(), "F3 0F ?? ?? ?? ?? ?? ?? C7 44 ?? ?? 00 00 80 BF C7 44 ?? ?? 00 00 80 3F", 0, overlayHook);
+            MAKE_MIDHOOK(Overlays3_sh, std::format("{}: HUD: Overlays: 3", CurrentGame->ShortName).c_str(), "F3 0F ?? ?? ?? ?? ?? ?? C7 44 ?? ?? 00 00 80 BF C7 44 ?? ?? 00 00 80 3F", 0, overlayHook);
+
+            // Fix sonar markers
+            MAKE_MIDHOOK(SonarMarkers_sh, std::format("{}: HUD: Sonar Markers", CurrentGame->ShortName).c_str(), "F3 0F ?? ?? ?? ?? ?? ?? F3 0F ?? ?? ?? ?? ?? ?? F3 0F ?? ?? F3 0F ?? ?? ?? 48 83 ?? ??", 0, [](SafetyHookContext& ctx) {
+                if (Screen::AspectRatio > Screen::NativeAspect)
+                    ctx.xmm0.f32[0] *= Screen::AspectMultiplier;
+            });
+
+            // Get movie playback status
+            MAKE_MIDHOOK(MovieStatus_sh, std::format("{}: HUD: Movie Status", CurrentGame->ShortName).c_str(), "8B ?? ?? ?? ?? ?? FF ?? 0F 84 ?? ?? ?? ?? FF ?? 0F 84 ?? ?? ?? ?? FF ?? 74 ?? 48 8D ?? ?? ?? ?? ?? 33 ??", 0, [](SafetyHookContext& ctx) {
+                IsMoviePlaying = (ctx.rax == 1 || ctx.rax == 2);
+            });
+
+            // Scale viewport size when movies are playing
+            MAKE_MIDHOOK(Viewport_sh, std::format("{}: HUD: Viewport", CurrentGame->ShortName).c_str(), "F3 0F ?? ?? F3 0F ?? ?? 0F ?? ?? 73 ?? 41 0F ?? ?? 41 ?? ?? 44 ?? ?? F3 0F ?? ?? F3 0F ?? ??", 0, [](SafetyHookContext& ctx) {
+                if (IsMoviePlaying && Screen::AspectRatio > Screen::NativeAspect)
+                    ctx.xmm1.f32[0] = Screen::HUDWidth;
             });
         }
     }

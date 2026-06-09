@@ -29,6 +29,7 @@ namespace GZ
     static void AspectRatio()
     {
         if (Config::FixAspect) {
+            // Fix depth of field strength
             MAKE_MIDHOOK(DepthOfField_sh, std::format("{}: Depth of Field", CurrentGame->ShortName).c_str(), "F3 0F ?? ?? ?? ?? ?? ?? 0F ?? ?? 0F ?? ?? ?? ?? ?? ?? 44 0F ?? ?? F3 44 ?? ?? ??", 0, [](SafetyHookContext& ctx) {
                 if (Screen::AspectRatio > Screen::NativeAspect) {
                     ctx.xmm6.f32[0] = (Screen::HUDWidth * 0.85f) * (1.0f / 1920.0f);
@@ -85,7 +86,7 @@ namespace GZ
 
         Common::AspectRatio();
         AspectRatio();
-        
+
         HUD();
     }
 }
