@@ -11,7 +11,6 @@
 #include <fstream>
 #include <filesystem>
 #include <vector>
-#include <numbers>
 #include <iostream>
 #include <algorithm>
 #include <format>
