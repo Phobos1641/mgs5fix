@@ -18,10 +18,12 @@ namespace Logger
     {
         if (!logFile.is_open()) return;
 
-        constexpr std::streamoff maxSize = 1 * 1024 * 1024;
+        static constexpr std::streamoff maxSize = 1 * 1024 * 1024;
         if (logFile.tellp() >= maxSize) return;
 
-        const auto now = std::chrono::current_zone()->to_local(std::chrono::floor<std::chrono::seconds>(std::chrono::system_clock::now()));
+        static const auto tz = std::chrono::current_zone();
+        const auto now = tz->to_local(std::chrono::floor<std::chrono::seconds>(std::chrono::system_clock::now()));
+        
         logFile << std::format("[{:%Y-%m-%d %H:%M:%S}] [{}] {}\n", now, level, msg);
 
         if (logFile.tellp() >= maxSize)
