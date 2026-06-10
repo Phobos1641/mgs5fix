@@ -23,13 +23,10 @@ namespace Common
     void Resolution()
     {
         if (Config::FixResolution) {
-            // Unlock windowed/borderless resolution list by removing upper limit and target aspect ratio
+            // Unlock windowed/borderless resolution list
             MAKE_MIDHOOK(WindowedResolutions_sh, std::format("{}: Unlock Resolutions: Windowed/Borderless", CurrentGame->ShortName).c_str(), "3B ?? ?? 0F 87 ?? ?? ?? ?? 3B ?? ?? 0F 87 ?? ?? ?? ?? 3B ?? ??", 0, [](SafetyHookContext& ctx) {
-                if (!ctx.rdi) return;
-
-                *reinterpret_cast<int*>(ctx.rdi + 0x18) = INT_MAX; // Upper limit X
-                *reinterpret_cast<int*>(ctx.rdi + 0x1C) = INT_MAX; // Upper limit Y
-                *reinterpret_cast<float*>(ctx.rdi + 0x20) = 0.0f;  // Target aspect ratio
+                ctx.rflags |= (1ULL << 6);
+                ctx.rip = WindowedResolutions_sh.target_address() + 0x2C;
             });
         }
     }
