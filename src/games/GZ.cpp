@@ -14,8 +14,8 @@ namespace GZ
     static void Resolution() 
     {
         if (Config::FixResolution) {
-            // Unlock fullscreen/borderless resolutions
-            if (auto* FullscreenResolutions = Memory::FindPattern(std::format("{}: Unlock Resolutions: Fullscreen/Borderless", CurrentGame->ShortName).c_str(), "F3 0F ?? ?? F3 48 ?? ?? ?? 8B ?? 41 ?? ?? ?? ?? ?? ?? 0F ?? ?? 44 ?? ?? 41 ?? ?? ?? 41 ?? ?? 33 ??"))
+            // Unlock fullscreen resolutions
+            if (auto* FullscreenResolutions = Memory::FindPattern(std::format("{}: Unlock Resolutions: Fullscreen", CurrentGame->ShortName).c_str(), "F3 0F ?? ?? F3 48 ?? ?? ?? 8B ?? 41 ?? ?? ?? ?? ?? ?? 0F ?? ?? 44 ?? ?? 41 ?? ?? ?? 41 ?? ?? 33 ??"))
                 Memory::PatchBytes(FullscreenResolutions + 0x3, "\xD1"); // divss xmm2, xmm0 -> divss xmm2, xmm1 to divide by the actual aspect ratio
 
             // Remove HWND_TOPMOST flag for borderless mode

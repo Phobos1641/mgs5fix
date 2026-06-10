@@ -14,8 +14,8 @@ namespace TPP
     static void Resolution() 
     {
         if (Config::FixResolution) {
-            // Unlock fullscreen/borderless resolutions
-            if (auto* FullscreenResolutions = Memory::FindPattern(std::format("{}: Unlock Resolutions: Fullscreen/Borderless", CurrentGame->ShortName).c_str(), "EB ?? F3 0F ?? ?? F3 48 ?? ?? ?? B8 ?? ?? ?? ??"))
+            // Unlock fullscreen resolutions
+            if (auto* FullscreenResolutions = Memory::FindPattern(std::format("{}: Unlock Resolutions: Fullscreen", CurrentGame->ShortName).c_str(), "EB ?? F3 0F ?? ?? F3 48 ?? ?? ?? B8 ?? ?? ?? ??"))
                 Memory::PatchBytes(FullscreenResolutions + 0x5, "\xD3"); // mulss xmm2, xmm0 -> mulss xmm2, xmm3 to multiply by the actual aspect ratio
         }
     }
