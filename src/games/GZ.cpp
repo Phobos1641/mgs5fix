@@ -19,7 +19,7 @@ namespace GZ
                 Memory::PatchBytes(FullscreenResolutions + 0x3, "\xD1"); // divss xmm2, xmm0 -> divss xmm2, xmm1 to divide by the actual aspect ratio
 
             // Remove HWND_TOPMOST flag for borderless mode
-            MAKE_MIDHOOK(BorderlessTopMost_sh, std::format("{}: Borderless TopMost", CurrentGame->ShortName).c_str(), "48 89 ?? ?? 48 8B ?? ?? 48 ?? ?? ?? ?? ?? ?? ?? ?? B8 01 00 00 00 48 ?? ?? ??", 0, [](SafetyHookContext& ctx) {
+            MAKE_MIDHOOK(BorderlessTopMost_sh, std::format("{}: Borderless TopMost", CurrentGame->ShortName).c_str(), "C7 44 ?? ?? ?? ?? ?? ?? 89 ?? ?? ?? 8B ?? ?? 89 ?? ?? ?? FF ?? ?? ?? ?? ?? E9 ?? ?? ?? ??", 0x8, [](SafetyHookContext& ctx) {
                 if (ctx.rdx == reinterpret_cast<uintptr_t>(HWND_TOPMOST))
                     ctx.rdx = reinterpret_cast<uintptr_t>(HWND_NOTOPMOST);
             });
@@ -100,7 +100,7 @@ namespace GZ
     void Init()
     {
         Common::CurrentResolution();
-        
+
         Common::Resolution();
         Resolution();
 
