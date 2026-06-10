@@ -84,6 +84,11 @@ namespace GZ
             // Fix freezing bug with throwables when using variable framerate
             if (auto* ThrowableFreezeBug = Memory::FindPattern(std::format("{}: Framerate: Throwable Freeze Bug", CurrentGame->ShortName).c_str(), "F2 0F 59 ?? ?? ?? ?? ?? 66 0F ?? ?? F7 ?? ?? ?? ?? ?? 00 01 00 00 74 ??"))
                 Memory::PatchBytes(ThrowableFreezeBug, "\xF2\x0F\x59\x40\x30\x90\x90\x90"); // mulsd xmm0,[7FF677CA9C00] (fixed 60fps frametime) -> mulsd xmm0, [rax+30] (current frametime)
+        
+            // Force controller input to be read per-frame
+            MAKE_MIDHOOK(ControllerInput_sh, std::format("{}: Framerate: Controller Input", CurrentGame->ShortName).c_str(), "44 89 ?? ?? ?? ?? ?? 4C 8B ?? ?? ?? 48 8B ?? ?? 48 33 ?? E8 ?? ?? ?? ??", 0, [](SafetyHookContext& ctx) {
+                if (ctx.r15 == 0) ctx.r15 = 1;
+            });
         }
     }
 
