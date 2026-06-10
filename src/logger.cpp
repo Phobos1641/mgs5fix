@@ -21,18 +21,11 @@ namespace Logger
         constexpr std::streamoff maxSize = 1 * 1024 * 1024;
         if (logFile.tellp() >= maxSize) return;
 
-        const auto now = std::chrono::system_clock::now();
-        const auto time = std::chrono::system_clock::to_time_t(now);
-        std::tm tm{};
-        localtime_s(&tm, &time);
-
-        logFile << std::format("[{:04d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}] [{}] {}\n",
-            tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
-            tm.tm_hour, tm.tm_min, tm.tm_sec,
-            level, msg);
+        const auto now = std::chrono::current_zone()->to_local(std::chrono::floor<std::chrono::seconds>(std::chrono::system_clock::now()));
+        logFile << std::format("[{:%Y-%m-%d %H:%M:%S}] [{}] {}\n", now, level, msg);
 
         if (logFile.tellp() >= maxSize)
-            logFile << std::format("[{:04d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}] [Warn] Log size limit (1MB) reached, stopping all logging.\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+            logFile << std::format("[{:%Y-%m-%d %H:%M:%S}] [Warn] Log size limit (1MB) reached, stopping all logging.\n", now);
 
         logFile.flush();
     }
