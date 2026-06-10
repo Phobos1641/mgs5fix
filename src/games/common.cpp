@@ -66,9 +66,10 @@ namespace Common
             if (auto* FramerateTarget = Memory::FindPattern(std::format("{}: Framerate: Target", CurrentGame->ShortName).c_str(), "49 85 ?? 75 ?? F2 0F 10 0D ?? ?? ?? ??"))
                 Memory::PatchBytes(FramerateTarget + 0x3, "\xEB");
 
-            // Reduce sleep duration for main thread
-            MAKE_MIDHOOK(MainThreadSleep_sh, std::format("{}: Main Thread Sleep", CurrentGame->ShortName).c_str(), "48 ?? ?? 48 85 ?? 75 ?? 8D ?? 01 48 8D ?? ?? ??", 0xB, [](SafetyHookContext& ctx) {
-                if (ctx.rbp == 1) ctx.rdx = 0; // Sleep(0)
+            // Reduce sleep duration for critical threads
+            MAKE_MIDHOOK(ThreadSleep_sh, std::format("{}: Framerate: Thread Sleep", CurrentGame->ShortName).c_str(), "48 ?? ?? 48 85 ?? 75 ?? 8D ?? 01 48 8D ?? ?? ??", 0xB, [](SafetyHookContext& ctx) {
+                const int threadID = *reinterpret_cast<const int*>(ctx.rsi + 0x8);
+                if (threadID <= 4) ctx.rdx = 0; // Sleep(0)
             });
 
             // Set timer resolution
