@@ -12,6 +12,12 @@ const std::vector<GameInfo> SupportedGames = {
     { "MgsGroundZeroes.exe", "METAL GEAR SOLID V: GROUND ZEROES", "GZ", GZ::Init }
 };
 
+// Use discrete GPU where available
+extern "C" {
+    __declspec(dllexport) DWORD NvOptimusEnablement = 0x00000001;
+    __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
+}
+
 DWORD __stdcall Main(void*)
 {
     Logger::Init();
