@@ -21,26 +21,27 @@ namespace Logger
         static constexpr std::streamoff maxSize = 1 * 1024 * 1024;
         if (logFile.tellp() >= maxSize) return;
 
-        static const auto tz = std::chrono::current_zone();
-        const auto now = tz->to_local(std::chrono::floor<std::chrono::seconds>(std::chrono::system_clock::now()));
-        
-        logFile << std::format("[{:%Y-%m-%d %H:%M:%S}] [{}] {}\n", now, level, msg);
+        SYSTEMTIME st;
+        GetLocalTime(&st);
+
+        logFile << std::format("[{:04d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}] [{}] {}\n",st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond, level, msg);
 
         if (logFile.tellp() >= maxSize)
-            logFile << std::format("[{:%Y-%m-%d %H:%M:%S}] [Warn] Log size limit (1MB) reached, stopping all logging.\n", now);
+            logFile << std::format("[{:04d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}] [Warn] Log size limit (1MB) reached, stopping all logging.\n", st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
 
         logFile.flush();
     }
 
     void Init()
     {
-        const std::string logPath = (ExePath / (FixName + ".log")).string();
+        const std::filesystem::path logPath = ExePath / (FixName + ".log");
         logFile.open(logPath, std::ios::trunc);
 
         if (!logFile.is_open()) {
             AllocConsole();
-            freopen_s(reinterpret_cast<FILE**>(stdout), "CONOUT$", "w", stdout);
-            std::cerr << "Fatal Error: " << FixName << ": Failed to open log file: " << logPath << std::endl;
+            FILE* dummy = nullptr;
+            freopen_s(&dummy, "CONOUT$", "w", stderr);
+            std::cerr << "Fatal Error: " << FixName << ": Failed to open log file: " << logPath.string() << std::endl;
             FreeLibraryAndExitThread(ThisModule, 1);
         }
 
@@ -48,7 +49,7 @@ namespace Logger
         LOG_INFO("{} v{}", FixName, FixVersion);
         LOG_INFO("Build Date: {} {}", __DATE__, __TIME__);
         LOG_INFO("----------");
-        LOG_INFO("Log File: {}", logPath);
+        LOG_INFO("Log File: {}", logPath.string());
         LOG_INFO("----------");
         LOG_INFO("Module Name: {}", ExeName);
         LOG_INFO("Module Path: {}", ExePath.string());
@@ -59,7 +60,6 @@ namespace Logger
 
     void Shutdown()
     {
-        if (logFile.is_open())
-            logFile.close();
+        if (logFile.is_open()) logFile.close();
     }
 }
