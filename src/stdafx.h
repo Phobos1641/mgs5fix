@@ -1,10 +1,19 @@
 #pragma once
 
 #define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
 
 #include <windows.h>
-#include <cassert>
+#include <intrin.h>
+#include <winternl.h>
+
+#include <string>
 #include <fstream>
 #include <filesystem>
 #include <vector>
-#include <winternl.h>
+#include <iostream>
+#include <algorithm>
+#include <format>
+
+#include <safetyhook.hpp>
+#include "logger.h"
