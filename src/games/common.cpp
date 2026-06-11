@@ -23,9 +23,15 @@ namespace Common
     void Resolution()
     {
         if (Config::FixResolution) {
+            // Unlock fullscreen resolution list
+            MAKE_MIDHOOK(FullscreenResolutions_sh, std::format("{}: Unlock Resolutions: Fullscreen", CurrentGame->ShortName).c_str(), "74 ?? 0F ?? ?? F3 ?? 0F ?? ?? 0F ?? ?? F3 ?? 0F ?? ?? 0F ?? ??", 0x2, [](SafetyHookContext& ctx) {
+                ctx.rflags |= (1ULL << 6); // ZF = 1
+                ctx.rip = FullscreenResolutions_sh.target_address() - 0x2;
+            });
+
             // Unlock windowed/borderless resolution list
             MAKE_MIDHOOK(WindowedResolutions_sh, std::format("{}: Unlock Resolutions: Windowed/Borderless", CurrentGame->ShortName).c_str(), "3B ?? ?? 0F 87 ?? ?? ?? ?? 3B ?? ?? 0F 87 ?? ?? ?? ?? 3B ?? ??", 0, [](SafetyHookContext& ctx) {
-                ctx.rflags |= (1ULL << 6);
+                ctx.rflags |= (1ULL << 6); // ZF = 1
                 ctx.rip = WindowedResolutions_sh.target_address() + 0x2C;
             });
         }
