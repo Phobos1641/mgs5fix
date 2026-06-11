@@ -22,7 +22,9 @@ namespace Config
 
         LOG_INFO("Config File: {}", configPath);
 
+        IntroSkip       = ParseConfig("Intro Skip", "Enabled", false);
         UnlockFPS       = ParseConfig("Unlock Framerate", "Enabled", false);
+
         FixResolution   = ParseConfig("Fix Resolution", "Enabled", false);
         FixAspect       = ParseConfig("Fix Aspect Ratio", "Enabled", false);
         FixHUD          = ParseConfig("Fix HUD", "Enabled", false);

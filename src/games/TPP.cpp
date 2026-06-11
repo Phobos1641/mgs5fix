@@ -11,6 +11,25 @@
 
 namespace TPP
 {
+    static void IntroSkip()
+    {
+        if (Config::IntroSkip) {
+            // Skip autosave dialog
+            MAKE_MIDHOOK(AutosaveDialogSkip_sh, std::format("{}: Intro Skip: Autosave Dialog", CurrentGame->ShortName).c_str(), "8B ?? 0F 57 ?? F2 ?? 0F ?? ?? 48 8B ?? E8 ?? ?? ?? ?? 48 8B ?? ?? ??", 0, [](SafetyHookContext& ctx) {
+                if (ctx.rsi == 1000) {
+                    *reinterpret_cast<int*>(ctx.rbp + 0x1578) = 0x00010001;
+                    AutosaveDialogSkip_sh.reset(); // Unhook as this is a generic function ("ShowErrorPopup")
+                }
+            });
+
+            // Skip intro logos
+            MAKE_MIDHOOK(LogoSkip_sh, std::format("{}: Intro Skip: Logos", CurrentGame->ShortName).c_str(), "0F ?? ?? E8 ?? ?? ?? ?? 48 8B ?? 80 ?? ?? ?? ?? ?? 05 75 ??", 0, [](SafetyHookContext& ctx) {
+                int& state = *reinterpret_cast<int*>(ctx.rcx + 0x8C);
+                if (state != 5) state = 5;
+            });
+        }
+    }
+    
     static void Resolution() 
     {
         // Nothing for now.
@@ -160,6 +179,8 @@ namespace TPP
     void Init()
     {
         Common::CurrentResolution();
+
+        IntroSkip();
 
         Common::Resolution();
         Resolution();

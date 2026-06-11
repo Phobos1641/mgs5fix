@@ -11,6 +11,26 @@
 
 namespace GZ
 {
+    static void IntroSkip() 
+    {
+        if (Config::IntroSkip) {
+            // Skip intro logos and autosave dialog
+            MAKE_MIDHOOK(IntroSkip_sh, std::format("{}: Intro Skip", CurrentGame->ShortName).c_str(), "48 8B ?? E8 ?? ?? ?? ?? 48 8B ?? 48 85 ?? 74 ?? 48 ?? ?? ?? ?? 00 00 85 ?? 75 ??", 0, [](SafetyHookContext& ctx) {
+                uint32_t& index = *reinterpret_cast<uint32_t*>(ctx.rcx + 0xAC);
+                uint32_t& state = *reinterpret_cast<uint32_t*>(ctx.rcx + 0xB0);
+
+                // Skip logos
+                if (index > 7 && index < 14) state = 4;
+
+                // Skip autosave dialog
+                if (index == 15) {
+                    index = 16;
+                    state = 0;
+                }
+            });
+        }
+    }
+
     static void Resolution() 
     {
         if (Config::FixResolution) {
@@ -101,6 +121,8 @@ namespace GZ
     void Init()
     {
         Common::CurrentResolution();
+
+        IntroSkip();
 
         Common::Resolution();
         Resolution();

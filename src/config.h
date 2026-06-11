@@ -4,7 +4,9 @@
 
 namespace Config
 {  
+    inline bool IntroSkip;
     inline bool UnlockFPS;
+
     inline bool FixResolution;
     inline bool FixAspect;
     inline bool FixHUD;
