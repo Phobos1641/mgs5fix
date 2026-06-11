@@ -139,7 +139,17 @@ namespace TPP
 
     static void Framerate()
     {
-        // Nothing TPP-specific yet
+        if (Config::UnlockFPS) {
+            // Fix loading softlock at >200fps
+            MAKE_MIDHOOK(LoadingSoftlock_sh, std::format("{}: Framerate: Loading Softlock", CurrentGame->ShortName).c_str(), "F3 0F ?? ?? ?? ?? ?? ?? 48 85 ?? 74 ?? 48 8B ?? ?? ?? ?? ?? 48 85 ??", 0x8, [](SafetyHookContext& ctx) {
+                // Force the first frametime stored to be 60fps (this should only fire once per object)
+                if (ctx.rdi && *reinterpret_cast<uint64_t*>(ctx.rdi + 0xE8) == 0) {
+                    constexpr float ft = 1.0f / 60.0f;
+                    if (ctx.xmm6.f32[0] < ft)
+                        ctx.xmm6.f32[0] = ft;
+                }
+            });
+        }
     }
 
     static void Graphics()
