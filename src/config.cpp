@@ -11,11 +11,11 @@ namespace Config
         mINI::INIFile file(configPath);
 
         if (!file.read(ini)) {
-            LOG_ERROR("{}: Could not locate config file. Make sure {}.ini is located in {}", FixName, FixName, FixPath.string());
             AllocConsole();
-            freopen_s(reinterpret_cast<FILE**>(stdout), "CONOUT$", "w", stdout);
-            freopen_s(reinterpret_cast<FILE**>(stderr), "CONOUT$", "w", stderr);
+            FILE* dummy = nullptr;
+            freopen_s(&dummy, "CONOUT$", "w", stderr);
             std::cerr << "Fatal Error: " << FixName + ": Could not locate config file.\nMake sure " + FixName + ".ini is located in " + FixPath.string() << std::endl;
+            LOG_ERROR("{}: Could not locate config file. Make sure {}.ini is located in {}", FixName, FixName, FixPath.string());
             FreeLibraryAndExitThread(ThisModule, 1);
         }
 
