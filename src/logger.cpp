@@ -38,10 +38,11 @@ namespace Logger
         logFile.open(logPath, std::ios::trunc);
 
         if (!logFile.is_open()) {
+            const auto err = GetLastError();
             AllocConsole();
             FILE* dummy = nullptr;
             freopen_s(&dummy, "CONOUT$", "w", stderr);
-            std::cerr << "Fatal Error: " << FixName << ": Failed to open log file: " << logPath.string() << std::endl;
+            std::cerr << "Fatal Error: " << FixName << ": Failed to open log file: " << logPath.string() << "\nReason: " << std::system_category().message(err) << std::endl;
             FreeLibraryAndExitThread(ThisModule, 1);
         }
 
