@@ -56,7 +56,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
         ExeName = exePath.filename().string();
         ExePath = exePath.remove_filename();
 
-        HANDLE mainHandle = CreateThread(NULL, 0, Main, 0, NULL, 0);
+        HANDLE mainHandle = CreateThread(NULL, 0, Main, 0, 0, NULL);
         if (mainHandle) {
             SetThreadPriority(mainHandle, THREAD_PRIORITY_HIGHEST);
             CloseHandle(mainHandle);
