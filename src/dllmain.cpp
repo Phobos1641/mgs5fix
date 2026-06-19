@@ -6,10 +6,12 @@
 
 #include "games/TPP.h"
 #include "games/GZ.h"
+#include "games/MGO.h"
 
 const std::vector<GameInfo> SupportedGames = {
     { "mgsvtpp.exe", "METAL GEAR SOLID V: THE PHANTOM PAIN", "TPP", TPP::Init },
-    { "MgsGroundZeroes.exe", "METAL GEAR SOLID V: GROUND ZEROES", "GZ", GZ::Init }
+    { "MgsGroundZeroes.exe", "METAL GEAR SOLID V: GROUND ZEROES", "GZ", GZ::Init },
+    { "mgsvmgo.exe", "METAL GEAR SOLIV V: ONLINE", "MGO", MGO::Init }
 };
 
 // Use discrete GPU where available
