@@ -3,7 +3,7 @@
 #include <ini.h>
 
 namespace Config
-{  
+{
     inline bool IntroSkip;
     inline bool UnlockFPS;
 
@@ -15,6 +15,9 @@ namespace Config
     inline int TerrainDistance;
     inline int ModelDistance;
     inline int GrassDistance;
+
+    inline bool ChangeFOV;
+    inline float FOV;
 
     inline mINI::INIStructure ini;
 

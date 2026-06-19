@@ -5,6 +5,8 @@
 #include "screen.h"
 #include "memory.h"
 
+#include <cmath>
+
 // Shared code in both TPP/GZ
 
 namespace Common
@@ -67,7 +69,7 @@ namespace Common
             // Force "variable" framerate setting
             if (auto* FramerateSetting = Memory::FindPattern(std::format("{}: Framerate: Setting", CurrentGame->ShortName).c_str(), "48 33 ?? ?? ?? ?? ?? 49 85 ?? 48 0F ?? ?? ?? ?? ?? ?? 48 89 ?? ?? ?? ??"))
                 Memory::PatchBytes(FramerateSetting, "\x48\x31\xC0\x90\x90\x90\x90"); // xor rax, rax
-            
+
             // Force "variable" framerate target
             if (auto* FramerateTarget = Memory::FindPattern(std::format("{}: Framerate: Target", CurrentGame->ShortName).c_str(), "49 85 ?? 75 ?? F2 0F 10 0D ?? ?? ?? ??"))
                 Memory::PatchBytes(FramerateTarget + 0x3, "\xEB");
@@ -90,6 +92,50 @@ namespace Common
         }
     }
 
+    void FOV()
+    {
+        if (!Config::ChangeFOV)
+            return;
+
+        const auto deg2rad     = 3.1415926F / 180.F;
+        const auto frame_width = 36.F;
+        const auto tpp_fov_tan = std::tan(Config::FOV * deg2rad / 2.F);
+        Screen::fFOVNewTPP      = frame_width / tpp_fov_tan / 2.F;
+        Screen::fFOVNewShoulder = frame_width / (tpp_fov_tan * (Screen::fFOVDefaultTPP / Screen::fFOVDefaultShoulder)) / 2.F;
+        Screen::fFOVNewHiding   = frame_width / (tpp_fov_tan * (Screen::fFOVDefaultTPP / Screen::fFOVDefaultHiding)) / 2.F;
+        Screen::fFOVNewCQC      = frame_width / (tpp_fov_tan * (Screen::fFOVDefaultTPP / Screen::fFOVDefaultCQC)) / 2.F;
+
+        std::uint8_t* UpdateFOVLerpCallSiteScanResult = Memory::PatternScan(ExeModule, "48 8B 8F ?? ?? ?? ?? 48 8B 01 FF 50 18 48 8D 4F E0 E8");
+        if (!UpdateFOVLerpCallSiteScanResult) {
+            LOG_INFO("{}: Graphics: FOV: Pattern scan failed.", CurrentGame->ShortName);
+            return;
+        }
+
+        LOG_INFO("{}: Graphics: FOV: update_fov_lerp: Call site is {:s}+{:x}", CurrentGame->ShortName, CurrentGame->Exe, UpdateFOVLerpCallSiteScanResult - (std::uint8_t*)ExeModule);
+
+        // Resolve the rel32 displacement at UpdateFOVLerpCallSiteScanResult+18 to find update_fov_lerp itself
+        auto* rel32_ptr = reinterpret_cast<std::int32_t*>(UpdateFOVLerpCallSiteScanResult + 18);
+        std::uint8_t* UpdateFovLerpAddress = reinterpret_cast<std::uint8_t*>(rel32_ptr) + 4 + *rel32_ptr;
+
+        LOG_INFO("{}: Graphics: FOV: update_fov_lerp: Address is {:s}+{:x}", CurrentGame->ShortName, CurrentGame->Exe, UpdateFovLerpAddress - (std::uint8_t*)ExeModule);
+
+        static const std::uintptr_t fov_offset = (CurrentGame->ShortName == "MGO") ? 0x2EC : 0x2FC;
+
+        static SafetyHookMid FOVMidHook{};
+        FOVMidHook = safetyhook::create_mid(UpdateFovLerpAddress, [](SafetyHookContext& ctx) {
+            auto* target_fov = reinterpret_cast<float*>(ctx.rcx + fov_offset);
+
+            if (*target_fov == Screen::fFOVDefaultTPP)
+                *target_fov = Screen::fFOVNewTPP;
+            else if (*target_fov == Screen::fFOVDefaultShoulder)
+                *target_fov = Screen::fFOVNewShoulder;
+            else if (*target_fov == Screen::fFOVDefaultHiding)
+                *target_fov = Screen::fFOVNewHiding;
+            else if (*target_fov == Screen::fFOVDefaultCQC)
+                *target_fov = Screen::fFOVNewCQC;
+        });
+    }
+
     void Graphics()
     {
         if (Config::LODTweaks) {
@@ -104,5 +150,7 @@ namespace Common
                     ctx.rax = *reinterpret_cast<const uint32_t*>(&modelDist);
             });
         }
+
+        FOV();
     }
 }

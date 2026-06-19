@@ -16,7 +16,7 @@ namespace Config
             FILE* dummy = nullptr;
             freopen_s(&dummy, "CONOUT$", "w", stderr);
             std::cerr << "Fatal Error: " << FixName << ": Could not locate config file.\nMake sure " << FixName << ".ini is located in " << FixPath.string() << "\nReason: " << std::system_category().message(err) << std::endl;
-            LOG_ERROR("Could not locate config file. Make sure {}.ini is located in {}. Reason: {}", FixName, FixPath.string(), std::system_category().message(err));            
+            LOG_ERROR("Could not locate config file. Make sure {}.ini is located in {}. Reason: {}", FixName, FixPath.string(), std::system_category().message(err));
             FreeLibraryAndExitThread(ThisModule, 1);
         }
 
@@ -34,6 +34,11 @@ namespace Config
             TerrainDistance = ParseConfig("LOD Tweaks", "TerrainDistance", 8192);
             ModelDistance   = ParseConfig("LOD Tweaks", "ModelDistance", 512);
             GrassDistance   = ParseConfig("LOD Tweaks", "GrassDistance", 1000);
+        }
+
+        ChangeFOV       = ParseConfig("Change FOV", "Enabled", false);
+        if (ChangeFOV) {
+            FOV = ParseConfig("Change FOV", "FOV", 90.0f);
         }
 
         LOG_INFO("----------");
