@@ -2,6 +2,8 @@
 #include "memory.h"
 #include "globals.h"
 
+#include <bit>
+
 namespace Memory
 {
     std::uint8_t* PatternScan(void* module, const char* signature, bool scanAll)
@@ -90,7 +92,7 @@ namespace Memory
                 uint32_t mask = static_cast<uint32_t>(_mm_movemask_epi8(cmp));
 
                 while (mask != 0) {
-                    uint32_t bit = _tzcnt_u32(mask);
+                    uint32_t bit = std::countr_zero(mask);
                     size_t matchPos = i + bit;
 
                     bool found = true;
@@ -138,7 +140,7 @@ namespace Memory
         }
 
         LOG_INFO("{}: Address is {:s}+{:x}", label, moduleName, addr - reinterpret_cast<std::uint8_t*>(module));
-            
+
         return addr;
     }
 
