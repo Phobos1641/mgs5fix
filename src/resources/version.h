@@ -1,6 +1,8 @@
 #pragma once
 
+#ifndef RC_INVOKED
 #include <string>
+#endif
 
 #define FIX_NAME "MGSVFix"
 #define REPO_URL "https://codeberg.org/Lyall/MGSVFix"
@@ -26,4 +28,3 @@ inline const std::string FixName = FIX_NAME;
 #define FILE_DESCRIPTION_ASI     FIX_NAME " ASI Plugin"
 #define INTERNAL_NAME_ASI        FIX_NAME ".asi"
 #define ORIGINAL_FILENAME_ASI    FIX_NAME ".asi"
- 
