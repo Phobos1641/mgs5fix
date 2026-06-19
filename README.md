@@ -8,11 +8,12 @@
 - Fix HUD issues at ultrawide resolutions.
 - Fix graphical effects at ultrawide resolutions.
 - Tweak LOD distances.
+- Change FOV.
 
 For more details on exactly what is fixed, click [here](./fixes.md).
 
 ## Installation  
-- Download the latest [release](../../../releases). 
+- Download the latest [release](../../releases).
 - Extract the contents of the release zip into the game folder.  
 
 ### Steam Deck/Linux Additional Instructions
@@ -36,3 +37,4 @@ Thanks to Hotiraripha for commissioning this fix!
 [Ultimate ASI Loader](https://github.com/ThirteenAG/Ultimate-ASI-Loader) for ASI loading.  
 [mINI](https://github.com/metayeti/mINI) for ini reading.  
 [safetyhook](https://github.com/cursey/safetyhook) for hooking.  
+[AltimorTASDK](https://github.com/AltimorTASDK/MGSV-TPP-FoV) for the FOV function signature.
