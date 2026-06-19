@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "version.h"
+#include "resources/version.h"
 #include "globals.h"
 #include "config.h"
 
