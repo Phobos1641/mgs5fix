@@ -1,9 +1,7 @@
-name: Build & Release
+name: CI
 
 on:
   push:
-    tags:
-      - 'v*'
   workflow_dispatch:
     inputs:
       version:
@@ -23,7 +21,7 @@ env:
   ASI_LOADER_B2SUM: 0a2b0cb407175137d65e1d47e2e6f4c9797cfb2bc5fe990a028e1b6afa225c2343bc85941d757ae7252d4691fea3c01bb5b2c7ee2fc2b9225252277ea4874d36
 
 jobs:
-  release:
+  build:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout (with submodules)
@@ -35,7 +33,34 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            meson ninja-build g++-mingw-w64-x86-64 zip unzip
+            meson ninja-build g++-mingw-w64-x86-64 unzip
+
+      - name: Configure
+        run: meson setup build --cross-file .ci/ubuntu-mingw-w64-x86_64.txt
+
+      - name: Build
+        run: meson compile -C build
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MGSVFix-asi
+          path: build/MGSVFix.asi
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-24.04
+    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: MGSVFix-asi
+          path: build
 
       - name: Resolve version
         id: ver
@@ -45,12 +70,6 @@ jobs:
           else
             echo "version=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
           fi
-
-      - name: Configure
-        run: meson setup build --cross-file .ci/ubuntu-mingw-w64-x86_64.txt
-
-      - name: Build
-        run: meson compile -C build
 
       - name: Fetch & verify Ultimate ASI Loader
         run: |
