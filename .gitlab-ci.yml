@@ -1,0 +1,111 @@
+stages:
+  - build
+  - upload
+  - release
+
+workflow:
+  rules:
+    - if: $CI_COMMIT_TAG
+    - if: $CI_PIPELINE_SOURCE == "push"
+
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+  ASI_LOADER_VERSION: "v9.7.2"
+  ASI_LOADER_ASSET: "Ultimate-ASI-Loader_x64.zip"
+  ASI_LOADER_B2SUM: "0a2b0cb407175137d65e1d47e2e6f4c9797cfb2bc5fe990a028e1b6afa225c2343bc85941d757ae7252d4691fea3c01bb5b2c7ee2fc2b9225252277ea4874d36"
+  PACKAGE_REGISTRY_URL: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/mgsvfix"
+
+build:
+  stage: build
+  tags:
+    - gitgud
+  image: ubuntu:24.04
+  before_script:
+    - apt-get update
+    - DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends meson ninja-build g++-mingw-w64-x86-64 ca-certificates
+  script:
+    - meson setup build --cross-file .ci/ubuntu-mingw-w64-x86_64.txt
+    - meson compile -C build
+  artifacts:
+    name: "MGSVFix-${CI_COMMIT_SHORT_SHA}"
+    paths:
+      - build/MGSVFix.asi
+    expire_in: 1 week
+
+upload:
+  stage: upload
+  tags:
+    - gitgud
+  image: ubuntu:24.04
+  rules:
+    - if: $CI_COMMIT_TAG
+  needs:
+    - job: build
+      artifacts: true
+  before_script:
+    - apt-get update
+    - DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends curl unzip zip ca-certificates
+  script:
+    - |
+      set -eu
+      PKG_VERSION="${CI_COMMIT_TAG#v}"
+      ZIP="MGSVFix_${CI_COMMIT_TAG}.zip"
+
+      mkdir -p staging
+      cp -t staging/ \
+        build/MGSVFix.asi \
+        MGSVFix.ini
+
+      url="https://github.com/ThirteenAG/Ultimate-ASI-Loader/releases/download/${ASI_LOADER_VERSION}/${ASI_LOADER_ASSET}"
+      echo "Downloading ${url}"
+      curl -fL --retry 3 -o loader.zip "${url}"
+      echo "Verifying BLAKE2b-512 checksum..."
+      echo "${ASI_LOADER_B2SUM}  loader.zip" | b2sum -c --strict -
+      unzip -o loader.zip -d loader
+
+      dinput="$(find loader -name dinput8.dll | head -n1)"
+      [ -n "${dinput}" ] || { echo "dinput8.dll not found in ${ASI_LOADER_ASSET}"; exit 1; }
+      mv "${dinput}" staging/winmm.dll
+      : > staging/EXTRACT_TO_GAME_FOLDER
+
+      ( cd staging && zip -r "../${ZIP}" . )
+
+      if [ -f release_body.md ]; then
+        sed "s/<RELEASE_ZIP_NAME>/${ZIP}/g" release_body.md > release_notes.md
+      else
+        echo "MGSVFix ${CI_COMMIT_TAG}" > release_notes.md
+      fi
+
+      echo "Uploading ${ZIP} to the Generic Package Registry..."
+      curl --fail --header "JOB-TOKEN: ${CI_JOB_TOKEN}" \
+        --upload-file "${ZIP}" \
+        "${PACKAGE_REGISTRY_URL}/${PKG_VERSION}/${ZIP}"
+
+      printf 'PKG_VERSION=%s\nZIP=%s\n' "${PKG_VERSION}" "${ZIP}" > release.env
+  artifacts:
+    paths:
+      - release_notes.md
+    reports:
+      dotenv: release.env
+
+release:
+  stage: release
+  tags:
+    - gitgud
+  image: registry.gitlab.com/gitlab-org/release-cli:latest
+  rules:
+    - if: $CI_COMMIT_TAG
+  needs:
+    - job: upload
+      artifacts: true
+  script:
+    - echo "Creating GitLab Release ${CI_COMMIT_TAG} (asset ${ZIP})"
+  release:
+    tag_name: "${CI_COMMIT_TAG}"
+    name: "${CI_COMMIT_TAG}"
+    description: "release_notes.md"
+    assets:
+      links:
+        - name: "${ZIP}"
+          url: "${PACKAGE_REGISTRY_URL}/${PKG_VERSION}/${ZIP}"
+          link_type: "package"
